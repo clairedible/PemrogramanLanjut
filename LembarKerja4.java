@@ -11,7 +11,7 @@ interface LayananInternasional extends Transaksi {
 }
 
 interface TransferGlobal extends TransaksiDigital, LayananInternasional {
-    void prosesTransferGlobal(String negaraTujuan, double jumlah);
+    void prosesTransferGlobal(String negaraTujuan, String nomorRekeningTujuan, double jumlah);
 }
 
 class Rekening {
