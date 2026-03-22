@@ -1,9 +1,11 @@
+import java.util.Scanner;
+
 interface Transaksi {
     void catatTransaksi(double jumlah, String reason);
 }
 
 interface TransaksiDigital extends Transaksi {
-    boolean validasiToken(String token);
+    boolean validasiPin();
 }
 
 interface LayananInternasional extends Transaksi {
@@ -17,10 +19,10 @@ interface TransferGlobal extends TransaksiDigital, LayananInternasional {
 class Rekening {
     protected String nomorRekening;
     protected double saldo;
+    protected String pin;
+    Scanner in = new Scanner(System.in);
 
-    public Rekening(String nomorRekening, double saldo) {
-        this.nomorRekening = nomorRekening;
-        this.saldo = saldo;
+    public Rekening() {
     }
 
     public void displayInfo() {
@@ -31,11 +33,43 @@ class Rekening {
 
 class RekeningValas extends Rekening implements TransferGlobal {
     private String kodeValas;
+    private boolean isSafe;
+    Scanner in = new Scanner(System.in);
 
-    public RekeningValas(String nomorRekening, double saldo, String kodeValas) {
-        super(nomorRekening, saldo);
-        this.kodeValas = kodeValas.toUpperCase();
+    public RekeningValas() {
+
+        System.out.println("=== PENDAFTARAN REKENING VALAS ===");
+        System.out.print("Masukkan Nomor Rekening : ");
+        String noRek = in.nextLine();
+
+        System.out.print("Kode Valas (USD/EUR)    : ");
+        String valas = in.nextLine();
+
+        System.out.print("Masukkan Saldo Awal     : ");
+        double saldoAwal = in.nextDouble();
+        in.nextLine(); //
+
+        System.out.print("Buat PIN (6 digit)      : ");
+        String pinBaru = in.nextLine();
+
+        this.nomorRekening = noRek;
+        this.saldo = saldoAwal;
+        this.pin = pinBaru;
+        this.kodeValas = valas;
+
         System.out.println("[INFO] Rekening Valas dengan kode valas " + this.kodeValas + " telah dibuat.");
+    }
+
+    public String getKodeValas() {
+        return kodeValas;
+    }
+
+    public void setKodeValas(String kodeValas) {
+        this.kodeValas = kodeValas.toUpperCase();
+    }
+
+    public void setSafe(boolean status) {
+        this.isSafe = status;
     }
 
     @Override
@@ -47,29 +81,39 @@ class RekeningValas extends Rekening implements TransferGlobal {
 
     @Override
     public void catatTransaksi(double jumlah, String reason) {
-        if (reason.equalsIgnoreCase("masuk")) {
-            System.out.println("[LOG] Dana Masuk: +" + jumlah + " " + kodeValas);
-        } else if (reason.equalsIgnoreCase("keluar")) {
-            if (jumlah > this.saldo) {
-                System.out.println("[FAILED] Saldo tidak mencukupi untuk transaksi keluar.");
-                return;
-            }
-            else {
-                this.saldo -= jumlah;
-                System.out.println("[LOG] Dana Keluar: " + jumlah + " " + kodeValas);
+        System.out.print("Masukkan pin untuk validasi transaksi: ");
+        boolean valid = validasiPin();
+        if (valid) {
+            if (reason.equalsIgnoreCase("masuk")) {
+                saldo += jumlah;
+                System.out.println(
+                        "[SUCCESS] Transaksi masuk sebesar " + jumlah + " " + kodeValas + " berhasil dicatat.");
+            } else if (reason.equalsIgnoreCase("keluar")) {
+                if (saldo >= jumlah) {
+                    saldo -= jumlah;
+                    System.out.println(
+                            "[SUCCESS] Transaksi keluar sebesar " + jumlah + " " + kodeValas + " berhasil dicatat.");
+                } else {
+                    System.out.println("[FAILED] Saldo tidak mencukupi untuk transaksi keluar.");
+                }
+            } else {
+                System.out.println("[FAILED] Alasan transaksi tidak valid.");
             }
         } else {
-            System.out.println("[LOG] Transaksi Tidak Dikenal: " + jumlah + " " + kodeValas);
+            System.out.println("[FAILED] Pin tidak valid. Transaksi dibatalkan.");
         }
         System.out.println("---------------------------------");
-}
+    }
 
     @Override
-    public boolean validasiToken(String token) {
-        if (token != null && token.length() == 6) {
+    public boolean validasiPin() {
+        System.out.print("Masukkan PIN untuk validasi: ");
+        String inputPin = in.nextLine();
+        if (this.pin.equals(inputPin)) {
             return true;
         }
         return false;
+
     }
 
     @Override
@@ -87,7 +131,7 @@ class RekeningValas extends Rekening implements TransferGlobal {
     }
 
     @Override
-    public void prosesTransferGlobal(String negaraTujuan, double jumlah) {
+    public void prosesTransferGlobal(String negaraTujuan, String nomorRekeningTujuan, double jumlah) {
         if (this.saldo >= jumlah) {
             this.saldo -= jumlah;
             System.out.println("[SUCCESS] Berhasil mengirim " + jumlah + " " + kodeValas + " ke " + negaraTujuan);
@@ -101,46 +145,96 @@ class RekeningValas extends Rekening implements TransferGlobal {
 
 final class ProtokolKeamanan {
     public final String ID_SERVER;
+    private boolean cek;
 
     public ProtokolKeamanan(String ID_SERVER) {
         this.ID_SERVER = ID_SERVER;
     }
 
-    public void validasiKeamanan(RekeningValas rek, String token) {
-        System.out.println("Enkripsi Server: " + ID_SERVER);
-        if (rek.validasiToken(token)) {
-            System.out.println("Status Keamanan: TERVERIFIKASI");
+    public boolean validasiKeamanan(RekeningValas rek) {
+        System.out.println("Memproses di Server: " + ID_SERVER);
+        boolean valid = rek.validasiPin();
+        if (valid) {
+            System.out.println("Status: TERVERIFIKASI");
+            System.out.println("---------------------------------");
+            this.cek = true;
+            return true;
         } else {
-            System.out.println("Status Keamanan: DITOLAK (Token Salah)");
+            System.out.println("Status: DITOLAK");
+            System.out.println("---------------------------------");
+            this.cek = false;
+            return false;
         }
-        System.out.println("---------------------------------");
+        
     }
 }
 
 public class LembarKerja4 {
     public static void main(String[] args) {
+        Scanner in = new Scanner(System.in);
         // Membuat protokol keamanan
         ProtokolKeamanan protokol = new ProtokolKeamanan("SERVER-001");
-        
-        RekeningValas usd = new RekeningValas("12345", 1000, "USD");
-        RekeningValas eur = new RekeningValas("67890", 1500, "EUR");
+        RekeningValas akun = null; 
+        boolean berjalan = true;
+        while (berjalan) {
+            System.out.println("\n========= M-BANKING VALAS =========");
+            System.out.println("1. Buka Rekening Baru");
+            System.out.println("2. Cek Saldo & Info");
+            System.out.println("3. Setor / Tarik Tunai");
+            System.out.println("4. Transfer Global (Luar Negeri)");
+            System.out.println("5. Kalkulator Kurs (Ke IDR)");
+            System.out.println("0. Keluar");
+            System.out.print("Pilih Menu (0-5): ");
+            
+            int pilihan = in.nextInt();
+            in.nextLine(); 
+            switch (pilihan) {
+                case 1:
+                    akun = new RekeningValas();
+                    break;
 
-        System.out.println();
-        System.out.println("--- PROSES TRANSAKSI GLOBAL ---");
-        usd.displayInfo();
-        eur.displayInfo();
-        protokol.validasiKeamanan(usd, "CDE123");
-        protokol.validasiKeamanan(usd, "ABC1234");
-        protokol.validasiKeamanan(eur, "ABC456");
+                case 2:
+                    if (akun != null) {
+                        akun.displayInfo();
+                    }
+                    break;
 
-        eur.catatTransaksi(150, "masuk");
-        usd.catatTransaksi(60, "keluar");
+                case 3:
+                    if (akun != null && protokol.validasiKeamanan(akun)) {
+                        System.out.print("Tipe (Masuk/Keluar): "); 
+                        String tipe = in.nextLine();
+                        System.out.print("Jumlah             : "); 
+                        double jml = in.nextDouble(); 
+                        in.nextLine();
+                        akun.catatTransaksi(jml, tipe);
+                    }
+                    break;
 
-        eur.konversiKurs(50);
-        usd.konversiKurs(100);
+                case 4:
+                    if (akun != null && protokol.validasiKeamanan(akun)) {
+                        System.out.print("Negara Tujuan      : "); String neg = in.nextLine();
+                        System.out.print("Rekening Tujuan    : "); String rekT = in.nextLine();
+                        System.out.print("Jumlah Transfer    : "); double jm = in.nextDouble();
+                        akun.prosesTransferGlobal(neg, rekT, jm);
+                    }
+                    break;
 
-        usd.prosesTransferGlobal("Indonesia", 1000);
-        usd.prosesTransferGlobal("Malaysia", 10);
-        eur.prosesTransferGlobal("Jerman", 175);
+                case 5:
+                    System.out.print("Jumlah yang dikonversi: ");
+                    double konv = in.nextDouble();
+                    akun.konversiKurs(konv);
+                    break;
+
+                case 0:
+                    System.out.println("Terima kasih telah menggunakan layanan kami.");
+                    berjalan = false;
+                    break;
+
+                default:
+                    System.out.println("❌ Pilihan tidak valid.");
+            
+            }
+        }
     }
 }
+
