@@ -1,7 +1,7 @@
 import java.util.Scanner;
 
 interface Transaksi {
-    void catatTransaksi(double jumlah, String reason);
+    void catatTransaksi();
 }
 
 interface TransaksiDigital extends Transaksi {
@@ -80,25 +80,26 @@ class RekeningValas extends Rekening implements TransferGlobal {
     }
 
     @Override
-    public void catatTransaksi(double jumlah, String reason) {
-        System.out.print("Masukkan pin untuk validasi transaksi: ");
+    public void catatTransaksi() {
         boolean valid = validasiPin();
         if (valid) {
-            if (reason.equalsIgnoreCase("masuk")) {
-                saldo += jumlah;
-                System.out.println(
-                        "[SUCCESS] Transaksi masuk sebesar " + jumlah + " " + kodeValas + " berhasil dicatat.");
-            } else if (reason.equalsIgnoreCase("keluar")) {
-                if (saldo >= jumlah) {
-                    saldo -= jumlah;
-                    System.out.println(
-                            "[SUCCESS] Transaksi keluar sebesar " + jumlah + " " + kodeValas + " berhasil dicatat.");
+            System.out.print("Tipe (Masuk/Keluar): "); 
+            String tipe = in.nextLine();
+            System.out.print("Jumlah             : "); 
+            double jml = in.nextDouble(); 
+            in.nextLine();
+
+            if (tipe.equalsIgnoreCase("masuk")) {
+                saldo += jml;
+                System.out.println("[SUCCESS] Transaksi masuk sebesar " + jml + " " + kodeValas + " berhasil dicatat.");
+            } else if (tipe.equalsIgnoreCase("keluar")) {
+                if (saldo >= jml) {
+                    saldo -= jml;
+                    System.out.println("[SUCCESS] Transaksi keluar sebesar " + jml + " " + kodeValas + " berhasil dicatat.");
                 } else {
                     System.out.println("[FAILED] Saldo tidak mencukupi untuk transaksi keluar.");
                 }
-            } else {
-                System.out.println("[FAILED] Alasan transaksi tidak valid.");
-            }
+            } 
         } else {
             System.out.println("[FAILED] Pin tidak valid. Transaksi dibatalkan.");
         }
@@ -135,7 +136,6 @@ class RekeningValas extends Rekening implements TransferGlobal {
         if (this.saldo >= jumlah) {
             this.saldo -= jumlah;
             System.out.println("[SUCCESS] Berhasil mengirim " + jumlah + " " + kodeValas + " ke " + negaraTujuan);
-            catatTransaksi(jumlah, "keluar");
         } else {
             System.out.println("[FAILED] Saldo tidak mencukupi untuk transfer global.");
             System.out.println("---------------------------------");
@@ -200,13 +200,10 @@ public class LembarKerja4 {
                     break;
 
                 case 3:
-                    if (akun != null && protokol.validasiKeamanan(akun)) {
-                        System.out.print("Tipe (Masuk/Keluar): "); 
-                        String tipe = in.nextLine();
-                        System.out.print("Jumlah             : "); 
-                        double jml = in.nextDouble(); 
-                        in.nextLine();
-                        akun.catatTransaksi(jml, tipe);
+                    if (akun != null) {
+                        akun.catatTransaksi();
+                    } else{
+                        System.out.println("[FAILED] Validasi Keamanan Gagal. Silakan coba lagi.");
                     }
                     break;
 
@@ -216,6 +213,8 @@ public class LembarKerja4 {
                         System.out.print("Rekening Tujuan    : "); String rekT = in.nextLine();
                         System.out.print("Jumlah Transfer    : "); double jm = in.nextDouble();
                         akun.prosesTransferGlobal(neg, rekT, jm);
+                    }else{
+                        System.out.println("[FAILED] Validasi Keamanan Gagal. Silakan coba lagi.");
                     }
                     break;
 
