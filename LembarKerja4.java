@@ -55,7 +55,7 @@ class RekeningValas extends Rekening implements TransferGlobal {
         this.nomorRekening = noRek;
         this.saldo = saldoAwal;
         this.pin = pinBaru;
-        this.kodeValas = valas;
+        this.kodeValas = valas.toUpperCase();
 
         System.out.println("[INFO] Rekening Valas dengan kode valas " + this.kodeValas + " telah dibuat.");
     }
