@@ -21,6 +21,7 @@ class Rekening implements TransaksiDigital{
     protected double saldo;
     protected String pin;
     protected boolean isVerified;
+    ProtokolKeamanan protokolReguler = new ProtokolKeamanan("SERVER-REGULER");
     Scanner in = new Scanner(System.in);
 
     public Rekening() {
@@ -60,8 +61,8 @@ class Rekening implements TransaksiDigital{
 
     @Override
     public void catatTransaksi() {
-        boolean valid = validasiPin();
-        if (valid) {
+        protokolReguler.validasiKeamanan(this);
+        if (isVerified) {
             System.out.print("Tipe (Masuk/Keluar): "); 
             String tipe = in.nextLine();
             System.out.print("Jumlah             : "); 
@@ -99,6 +100,7 @@ class Rekening implements TransaksiDigital{
 class RekeningValas extends Rekening implements TransferGlobal {
     private String kodeValas;
     Scanner in = new Scanner(System.in);
+    ProtokolKeamanan protokolValas = new ProtokolKeamanan("SERVER-VALAS");
 
     public RekeningValas() {
         System.out.println("=== PENDAFTARAN REKENING VALAS ===");
@@ -140,8 +142,8 @@ class RekeningValas extends Rekening implements TransferGlobal {
 
     @Override
     public void catatTransaksi() {
-        boolean valid = validasiPin();
-        if (valid) {
+        protokolValas.validasiKeamanan(this);
+        if (isVerified) {
             System.out.print("Tipe (Masuk/Keluar): "); 
             String tipe = in.nextLine();
             System.out.print("Jumlah             : "); 
@@ -191,11 +193,17 @@ class RekeningValas extends Rekening implements TransferGlobal {
 
     @Override
     public void prosesTransferGlobal(String negaraTujuan, String nomorRekeningTujuan, double jumlah) {
-        if (this.saldo >= jumlah) {
-            this.saldo -= jumlah;
-            System.out.println("[SUCCESS] Berhasil mengirim " + jumlah + " " + kodeValas + " ke " + negaraTujuan);
+        protokolValas.validasiKeamanan(this);
+        if (isVerified) {
+            if (this.saldo >= jumlah) {
+                this.saldo -= jumlah;
+                System.out.println("[SUCCESS] Berhasil mengirim " + jumlah + " " + kodeValas + " ke " + negaraTujuan);
+            } else {
+                System.out.println("[FAILED] Saldo tidak mencukupi untuk transfer global.");
+                System.out.println("---------------------------------");
+            }
         } else {
-            System.out.println("[FAILED] Saldo tidak mencukupi untuk transfer global.");
+            System.out.println("[FAILED] Pin tidak valid. Transfer global dibatalkan.");
             System.out.println("---------------------------------");
         }
     }
@@ -208,21 +216,18 @@ final class ProtokolKeamanan {
         this.ID_SERVER = ID_SERVER;
     }
 
-    public boolean validasiKeamanan(Rekening rek) {
+    public void validasiKeamanan(Rekening rek) {
         System.out.println("Memproses di Server: " + ID_SERVER);
         boolean valid = rek.validasiPin();
         if (valid) {
             System.out.println("Status: TERVERIFIKASI");
             System.out.println("---------------------------------");
             rek.setIsVerified(true);
-            return true;
         } else {
             System.out.println("Status: DITOLAK");
             System.out.println("---------------------------------");
             rek.setIsVerified(false);
-            return false;
         }
-        
     }
 }
 
@@ -338,7 +343,7 @@ public class LembarKerja4 {
                     break;
 
                 case 4:
-                    if (akunValas != null && protokol.validasiKeamanan(akunValas)) {
+                    if (akunValas != null) {
                         System.out.print("Negara Tujuan      : "); String neg = in.nextLine();
                         System.out.print("Rekening Tujuan    : "); String rekT = in.nextLine();
                         System.out.print("Jumlah Transfer    : "); double jm = in.nextDouble();
@@ -366,4 +371,3 @@ public class LembarKerja4 {
         }
     }
 }
-
