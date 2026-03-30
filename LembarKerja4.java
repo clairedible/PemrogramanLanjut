@@ -20,15 +20,20 @@ class Rekening implements TransaksiDigital{
     protected String nomorRekening;
     protected double saldo;
     protected String pin;
-    protected boolean isVerified;
+    protected boolean isVerified = false;
     ProtokolKeamanan protokolReguler = new ProtokolKeamanan("SERVER-REGULER");
     Scanner in = new Scanner(System.in);
 
-    public Rekening() {
+    public Rekening(String nomorRekening, double saldo, String pin) {
+        this.nomorRekening = nomorRekening;
+        this.saldo = saldo;
+        this.pin = pin;
+    }
+
+    public void daftarRekening() {
         System.out.println("=== PENDAFTARAN REKENING REGULER ===");
         System.out.print("Masukkan Nomor Rekening : ");
         String noRek = in.nextLine();
-
         System.out.println("[INFO] Rekening reguler akan menggunakan IDR sebagai mata uang default.");
         System.out.println("[PERHATIAN] Wajib melakukan deposit awal minimal Rp50.000 untuk aktivasi rekening.");
         System.out.print("Masukkan Saldo Awal     : ");
@@ -43,10 +48,7 @@ class Rekening implements TransaksiDigital{
         System.out.print("Buat PIN (6 digit)      : ");
         String pinBaru = in.nextLine();
 
-        this.nomorRekening = noRek;
-        this.saldo = saldoAwal;
-        this.pin = pinBaru;
-
+        Rekening reg = new Rekening(noRek, saldoAwal, pinBaru);
         System.out.println("[INFO] Rekening reguler telah dibuat.");
     }
 
@@ -61,7 +63,6 @@ class Rekening implements TransaksiDigital{
 
     @Override
     public void catatTransaksi() {
-        protokolReguler.validasiKeamanan(this);
         if (isVerified) {
             System.out.print("Tipe (Masuk/Keluar): "); 
             String tipe = in.nextLine();
@@ -102,7 +103,12 @@ class RekeningValas extends Rekening implements TransferGlobal {
     Scanner in = new Scanner(System.in);
     ProtokolKeamanan protokolValas = new ProtokolKeamanan("SERVER-VALAS");
 
-    public RekeningValas() {
+    public RekeningValas(String nomorRekening, double saldo, String pin, String kodeValas) {
+        super(nomorRekening, saldo, pin);
+        this.kodeValas = kodeValas.toUpperCase();
+    }
+
+    public void daftarRekeningValas() {
         System.out.println("=== PENDAFTARAN REKENING VALAS ===");
         System.out.print("Masukkan Nomor Rekening : ");
         String noRek = in.nextLine();
@@ -117,12 +123,8 @@ class RekeningValas extends Rekening implements TransferGlobal {
         System.out.print("Buat PIN (6 digit)      : ");
         String pinBaru = in.nextLine();
 
-        this.nomorRekening = noRek;
-        this.saldo = saldoAwal;
-        this.pin = pinBaru;
-        this.kodeValas = valas.toUpperCase();
-
-        System.out.println("[INFO] Rekening Valas dengan kode valas " + this.kodeValas + " telah dibuat.");
+        RekeningValas valasRek = new RekeningValas(noRek, saldoAwal, pinBaru, valas);
+        System.out.println("[INFO] Rekening Valas dengan kode valas " + valasRek.getKodeValas() + " telah dibuat.");
     }
 
     public String getKodeValas() {
@@ -146,7 +148,6 @@ class RekeningValas extends Rekening implements TransferGlobal {
 
     @Override
     public void catatTransaksi() {
-        protokolValas.validasiKeamanan(this);
         if (isVerified) {
             System.out.print("Tipe (Masuk/Keluar): "); 
             String tipe = in.nextLine();
@@ -197,7 +198,6 @@ class RekeningValas extends Rekening implements TransferGlobal {
 
     @Override
     public void prosesTransferGlobal(String negaraTujuan, String nomorRekeningTujuan, double jumlah) {
-        protokolValas.validasiKeamanan(this);
         if (isVerified) {
             if (this.saldo >= jumlah) {
                 this.saldo -= jumlah;
@@ -252,10 +252,8 @@ public class LembarKerja4 {
         in.nextLine();
 
         if (jenisRek == 1) {
-            akun = new Rekening();
             berjalan = true;
         } else if (jenisRek == 2) {
-            akunValas = new RekeningValas();
             berjalanValas = true;
         } else {
             System.out.println("❌ Pilihan tidak valid. Program akan keluar.");
@@ -280,11 +278,14 @@ public class LembarKerja4 {
                 case 2:
                     if (akun != null) {
                         akun.displayInfo();
+                    }else{
+                        System.out.println("[INFO] Silakan buat rekening terlebih dahulu.");
                     }
                     break;
 
                 case 3:
                     if (akun != null) {
+                        akun.protokolReguler.validasiKeamanan(akun);
                         if (akun.isVerified) {
                             akun.catatTransaksi();
                         }else{
@@ -316,9 +317,9 @@ public class LembarKerja4 {
             System.out.println("0. Keluar");
             System.out.print("Pilih Menu (0-5): ");
             
-            int pilihan = in.nextInt();
+            int pilihan1 = in.nextInt();
             in.nextLine(); 
-            switch (pilihan) {
+            switch (pilihan1) {
                 case 1:
                     akunValas = new RekeningValas();
                     break;
@@ -327,24 +328,26 @@ public class LembarKerja4 {
                     if (akunValas != null) {
                         akunValas.displayInfo();
                     }else{
-                        System.out.println("[INFO} Silakan buat rekening terlebih dahulu.");
+                        System.out.println("[INFO] Silakan buat rekening terlebih dahulu.");
                     }
                     break;
 
                 case 3:
                     if (akunValas != null) {
+                        akunValas.protokolValas.validasiKeamanan(akunValas);
                         if (akunValas.isVerified) {
                             akunValas.catatTransaksi();
                         }else{
                             System.out.println("[FAILED] Validasi Keamanan Gagal. Silakan coba lagi.");
                         }
                     } else{
-                        System.out.println("[INFO} Silakan buat rekening terlebih dahulu.");
+                        System.out.println("[INFO] Silakan buat rekening terlebih dahulu.");
                     }
                     break;
 
                 case 4:
                     if (akunValas != null) {
+                        akunValas.protokolValas.validasiKeamanan(akunValas);
                         System.out.print("Negara Tujuan      : "); String neg = in.nextLine();
                         System.out.print("Rekening Tujuan    : "); String rekT = in.nextLine();
                         System.out.print("Jumlah Transfer    : "); double jm = in.nextDouble();
