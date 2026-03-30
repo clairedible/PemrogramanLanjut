@@ -16,28 +16,91 @@ interface TransferGlobal extends TransaksiDigital, LayananInternasional {
     void prosesTransferGlobal(String negaraTujuan, String nomorRekeningTujuan, double jumlah);
 }
 
-class Rekening {
+class Rekening implements TransaksiDigital{
     protected String nomorRekening;
     protected double saldo;
     protected String pin;
+    protected boolean isVerified;
     Scanner in = new Scanner(System.in);
 
     public Rekening() {
+        System.out.println("=== PENDAFTARAN REKENING REGULER ===");
+        System.out.print("Masukkan Nomor Rekening : ");
+        String noRek = in.nextLine();
+
+        System.out.println("[INFO] Rekening reguler akan menggunakan IDR sebagai mata uang default.");
+        System.out.println("[PERHATIAN] Wajib melakukan deposit awal minimal Rp50.000 untuk aktivasi rekening.");
+        System.out.print("Masukkan Saldo Awal     : ");
+        double saldoAwal = in.nextDouble();
+        while (saldoAwal < 50000) {
+            System.out.println("[ERROR] Saldo awal minimal Rp50.000. Silakan masukkan jumlah yang valid.");
+            System.out.print("Masukkan Saldo Awal     : ");
+            saldoAwal = in.nextDouble();
+        }
+        in.nextLine(); 
+
+        System.out.print("Buat PIN (6 digit)      : ");
+        String pinBaru = in.nextLine();
+
+        this.nomorRekening = noRek;
+        this.saldo = saldoAwal;
+        this.pin = pinBaru;
+
+        System.out.println("[INFO] Rekening reguler telah dibuat.");
     }
 
     public void displayInfo() {
         System.out.println("Nomor Rekening : " + nomorRekening);
         System.out.println("Saldo          : " + saldo);
     }
+
+    public void setIsVerified(boolean status) {
+        this.isVerified = status;
+    }
+
+    @Override
+    public void catatTransaksi() {
+        boolean valid = validasiPin();
+        if (valid) {
+            System.out.print("Tipe (Masuk/Keluar): "); 
+            String tipe = in.nextLine();
+            System.out.print("Jumlah             : "); 
+            double jml = in.nextDouble(); 
+            in.nextLine();
+
+            if (tipe.equalsIgnoreCase("masuk")) {
+                saldo += jml;
+                System.out.println("[SUCCESS] Transaksi masuk sebesar Rp" + jml + " " + " berhasil dicatat.");
+            } else if (tipe.equalsIgnoreCase("keluar")) {
+                if (saldo >= jml) {
+                    saldo -= jml;
+                    System.out.println("[SUCCESS] Transaksi keluar sebesar Rp" + jml + " " + " berhasil dicatat.");
+                } else {
+                    System.out.println("[FAILED] Saldo tidak mencukupi untuk transaksi keluar.");
+                }
+            } 
+        } else {
+            System.out.println("[FAILED] Pin tidak valid. Transaksi dibatalkan.");
+        }
+        System.out.println("---------------------------------");
+    }
+
+    @Override
+    public boolean validasiPin() {
+        System.out.print("Masukkan PIN untuk validasi: ");
+        String inputPin = in.nextLine();
+        if (this.pin.equals(inputPin)) {
+            return true;
+        }
+        return false;
+    }
 }
 
 class RekeningValas extends Rekening implements TransferGlobal {
     private String kodeValas;
-    private boolean isSafe;
     Scanner in = new Scanner(System.in);
 
     public RekeningValas() {
-
         System.out.println("=== PENDAFTARAN REKENING VALAS ===");
         System.out.print("Masukkan Nomor Rekening : ");
         String noRek = in.nextLine();
@@ -66,10 +129,6 @@ class RekeningValas extends Rekening implements TransferGlobal {
 
     public void setKodeValas(String kodeValas) {
         this.kodeValas = kodeValas.toUpperCase();
-    }
-
-    public void setSafe(boolean status) {
-        this.isSafe = status;
     }
 
     @Override
@@ -114,7 +173,6 @@ class RekeningValas extends Rekening implements TransferGlobal {
             return true;
         }
         return false;
-
     }
 
     @Override
@@ -145,24 +203,23 @@ class RekeningValas extends Rekening implements TransferGlobal {
 
 final class ProtokolKeamanan {
     public final String ID_SERVER;
-    private boolean cek;
 
     public ProtokolKeamanan(String ID_SERVER) {
         this.ID_SERVER = ID_SERVER;
     }
 
-    public boolean validasiKeamanan(RekeningValas rek) {
+    public boolean validasiKeamanan(Rekening rek) {
         System.out.println("Memproses di Server: " + ID_SERVER);
         boolean valid = rek.validasiPin();
         if (valid) {
             System.out.println("Status: TERVERIFIKASI");
             System.out.println("---------------------------------");
-            this.cek = true;
+            rek.setIsVerified(true);
             return true;
         } else {
             System.out.println("Status: DITOLAK");
             System.out.println("---------------------------------");
-            this.cek = false;
+            rek.setIsVerified(false);
             return false;
         }
         
@@ -174,9 +231,75 @@ public class LembarKerja4 {
         Scanner in = new Scanner(System.in);
         // Membuat protokol keamanan
         ProtokolKeamanan protokol = new ProtokolKeamanan("SERVER-001");
-        RekeningValas akun = null; 
-        boolean berjalan = true;
-        while (berjalan) {
+        Rekening akun = null; 
+        RekeningValas akunValas = null;
+        boolean berjalan = false;
+        boolean berjalanValas = false;
+        
+        System.out.println("=== SELAMAT DATANG DI M-BANKING ===");
+        System.out.println("1. Rekening Reguler");
+        System.out.println("2. Rekening Valas");
+        System.out.print("Pilih Jenis Rekening (1/2): ");
+        int jenisRek = in.nextInt();
+        in.nextLine();
+
+        if (jenisRek == 1) {
+            akun = new Rekening();
+            berjalan = true;
+        } else if (jenisRek == 2) {
+            akunValas = new RekeningValas();
+            berjalanValas = true;
+        } else {
+            System.out.println("❌ Pilihan tidak valid. Program akan keluar.");
+            return;
+        }
+
+        while (berjalan){
+            System.out.println("\n========= M-BANKING REGULER =========");
+            System.out.println("1. Buka Rekening Baru");
+            System.out.println("2. Cek Saldo & Info");
+            System.out.println("3. Setor / Tarik Tunai");
+            System.out.println("0. Keluar");
+            System.out.print("Pilih Menu (0-3): ");
+            
+            int pilihan = in.nextInt();
+            in.nextLine(); 
+            switch (pilihan) {
+                case 1:
+                    akun = new Rekening();
+                    break;
+
+                case 2:
+                    if (akun != null) {
+                        akun.displayInfo();
+                    }
+                    break;
+
+                case 3:
+                    if (akun != null) {
+                        protokol.validasiKeamanan(akun);
+                        if (akun.isVerified) {
+                            akun.catatTransaksi();
+                        }else{
+                            System.out.println("[FAILED] Validasi Keamanan Gagal. Silakan coba lagi.");
+                        }
+                    } else{
+                        System.out.println("[INFO} Silakan buat rekening terlebih dahulu.");
+                    }
+                    break;
+
+                case 0:
+                    System.out.println("Terima kasih telah menggunakan layanan kami.");
+                    berjalan = false;
+                    break;
+
+                default:
+                    System.out.println("❌ Pilihan tidak valid.");
+            
+            }
+        }
+
+        while (berjalanValas) {
             System.out.println("\n========= M-BANKING VALAS =========");
             System.out.println("1. Buka Rekening Baru");
             System.out.println("2. Cek Saldo & Info");
@@ -190,29 +313,36 @@ public class LembarKerja4 {
             in.nextLine(); 
             switch (pilihan) {
                 case 1:
-                    akun = new RekeningValas();
+                    akunValas = new RekeningValas();
                     break;
 
                 case 2:
-                    if (akun != null) {
-                        akun.displayInfo();
+                    if (akunValas != null) {
+                        akunValas.displayInfo();
+                    }else{
+                        System.out.println("[INFO} Silakan buat rekening terlebih dahulu.");
                     }
                     break;
 
                 case 3:
-                    if (akun != null) {
-                        akun.catatTransaksi();
+                    if (akunValas != null) {
+                        protokol.validasiKeamanan(akunValas);
+                        if (akunValas.isVerified) {
+                            akunValas.catatTransaksi();
+                        }else{
+                            System.out.println("[FAILED] Validasi Keamanan Gagal. Silakan coba lagi.");
+                        }
                     } else{
-                        System.out.println("[FAILED] Validasi Keamanan Gagal. Silakan coba lagi.");
+                        System.out.println("[INFO} Silakan buat rekening terlebih dahulu.");
                     }
                     break;
 
                 case 4:
-                    if (akun != null && protokol.validasiKeamanan(akun)) {
+                    if (akunValas != null && protokol.validasiKeamanan(akunValas)) {
                         System.out.print("Negara Tujuan      : "); String neg = in.nextLine();
                         System.out.print("Rekening Tujuan    : "); String rekT = in.nextLine();
                         System.out.print("Jumlah Transfer    : "); double jm = in.nextDouble();
-                        akun.prosesTransferGlobal(neg, rekT, jm);
+                        akunValas.prosesTransferGlobal(neg, rekT, jm);
                     }else{
                         System.out.println("[FAILED] Validasi Keamanan Gagal. Silakan coba lagi.");
                     }
@@ -221,7 +351,7 @@ public class LembarKerja4 {
                 case 5:
                     System.out.print("Jumlah yang dikonversi: ");
                     double konv = in.nextDouble();
-                    akun.konversiKurs(konv);
+                    akunValas.konversiKurs(konv);
                     break;
 
                 case 0:
