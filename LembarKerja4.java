@@ -133,6 +133,10 @@ class RekeningValas extends Rekening implements TransferGlobal {
         this.kodeValas = kodeValas.toUpperCase();
     }
 
+    public void setIsVerified(boolean status) {
+        this.isVerified = status;
+    }
+
     @Override
     public void displayInfo() {
         System.out.println("Nomor Rekening : " + nomorRekening);
@@ -235,7 +239,6 @@ public class LembarKerja4 {
     public static void main(String[] args) {
         Scanner in = new Scanner(System.in);
         // Membuat protokol keamanan
-        ProtokolKeamanan protokol = new ProtokolKeamanan("SERVER-001");
         Rekening akun = null; 
         RekeningValas akunValas = null;
         boolean berjalan = false;
@@ -282,7 +285,6 @@ public class LembarKerja4 {
 
                 case 3:
                     if (akun != null) {
-                        protokol.validasiKeamanan(akun);
                         if (akun.isVerified) {
                             akun.catatTransaksi();
                         }else{
@@ -331,7 +333,6 @@ public class LembarKerja4 {
 
                 case 3:
                     if (akunValas != null) {
-                        protokol.validasiKeamanan(akunValas);
                         if (akunValas.isVerified) {
                             akunValas.catatTransaksi();
                         }else{
