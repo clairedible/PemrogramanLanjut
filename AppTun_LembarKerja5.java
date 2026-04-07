@@ -59,7 +59,7 @@ class PatientProfileV2 implements UniversalRecord {
     private String ssn; 
     private String allergyHistory;
     private String specialDiagnosis;
-    private int securityLevel = 3;
+    private final int securityLevel = 3;
 
     public PatientProfileV2(String patientId, String name, String ssn, String allergyHistory, String specialDiagnosis) {
         this.patientId = patientId;
@@ -97,7 +97,7 @@ class SecureResponse<T extends UniversalRecord> {
     private boolean success;
     private T data; 
     private String warningMessage;
-    private int clearanceUsed;
+    private final int clearanceUsed;
 
     public SecureResponse(boolean success, T data, String warningMessage, int clearanceUsed) {
         this.success = success;
@@ -157,7 +157,7 @@ public class AppTun_LembarKerja5 {
         System.out.println("╚═════════════════════════════════════════════════════════════════════════════════╝\n");
 
         int aksesRendah = 1;
-        int aksesTinggi = 3;
+        int aksesTinggi = 4;
         
         PatientProfileV1 pasienV1 = new PatientProfileV1("P-01", "Budi", "357123456");
         PatientProfileV2 pasienV2 = new PatientProfileV2("P-02", "Siti", "357987654", "Kacang", "HIV/AIDS");
