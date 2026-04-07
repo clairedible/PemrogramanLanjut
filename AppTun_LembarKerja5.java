@@ -29,9 +29,20 @@ class PatientProfileV1 implements UniversalRecord {
         this.ssn = ssn;
     }
 
-    @Override public String getPatientId() { return patientId; }
-    @Override public int getVersion() { return 1; }
-    @Override public int getSecurityLevel() { return securityLevel; }
+    @Override 
+    public String getPatientId() { 
+        return patientId; 
+    }
+
+    @Override 
+    public int getVersion() { 
+        return 1; 
+    }
+
+    @Override 
+    public int getSecurityLevel() { 
+        return securityLevel; 
+    }
 
     @Override
     public String maskSensitiveData(int requesterClearance) {
@@ -58,9 +69,20 @@ class PatientProfileV2 implements UniversalRecord {
         this.specialDiagnosis = specialDiagnosis;
     }
 
-    @Override public String getPatientId() { return patientId; }
-    @Override public int getVersion() { return 2; }
-    @Override public int getSecurityLevel() { return securityLevel; }
+    @Override 
+    public String getPatientId() { 
+        return patientId; 
+    }
+
+    @Override 
+    public int getVersion() { 
+        return 2; 
+    }
+
+    @Override 
+    public int getSecurityLevel() { 
+        return securityLevel; 
+    }
 
     @Override
     public String maskSensitiveData(int requesterClearance) {
