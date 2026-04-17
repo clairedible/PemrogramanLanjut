@@ -1,0 +1,3 @@
+Buku-01,Pulang,Novel
+Buku-02,Pergi,Novel
+Buku-03,Pulang Pergi,Novel
