@@ -69,11 +69,6 @@ public class Main {
             }
         }
     }
-
-    // ==========================================
-    // 1. SISTEM LOGIN, REGISTRASI & INISIALISASI
-    // ==========================================
-
     private static void inisialisasiFile() {
         try {
             File folder = new File("D:\\pemlan\\LK06");
@@ -127,8 +122,6 @@ public class Main {
         String tglLahir = scanner.nextLine().trim();
         System.out.print("Masukkan Password: ");
         String password = scanner.nextLine().trim();
-
-        // Format data: NIP, Nama, Password, Tanggal Lahir
         String dataBaru = nip + "," + nama + "," + password + "," + tglLahir;
         tulisKeFile(FILE_PEGAWAI, dataBaru);
         System.out.println("BERHASIL: Akun pegawai atas nama " + nama + " berhasil dibuat! Silakan Login.");
@@ -158,7 +151,6 @@ public class Main {
             boolean ditemukan = false;
             while ((baris = br.readLine()) != null) {
                 String[] data = baris.split(","); 
-                // data[0]=NIP, data[1]=Nama, data[2]=Password, data[3]=Tanggal Lahir
                 if (data.length >= 3 && data[0].equals(inputNip) && data[2].equals(inputPassword)) {
                     loggedInPegawai = data[1]; 
                     ditemukan = true;
@@ -173,11 +165,6 @@ public class Main {
             System.out.println("Error membaca file pegawai: " + e.getMessage());
         }
     }
-
-    // ==========================================
-    // 2. KELOLA DATA BUKU
-    // ==========================================
-
     private static void menuBuku() {
         System.out.println("\n--- KELOLA BUKU ---");
         System.out.println("1. Tambah Buku");
@@ -328,11 +315,6 @@ public class Main {
             System.out.println("Buku dengan Kode " + targetKode + " tidak ditemukan.");
         }
     }
-
-    // ==========================================
-    // 3. KELOLA DATA SISWA
-    // ==========================================
-
     private static void menuSiswa() {
         System.out.println("\n--- KELOLA SISWA ---");
         System.out.println("1. Tambah Siswa");
@@ -484,10 +466,6 @@ public class Main {
         }
     }
 
-    // ==========================================
-    // 4. TRANSAKSI (PINJAM & KEMBALI)
-    // ==========================================
-
     private static void transaksiPinjam() {
     System.out.println("\n--- PEMINJAMAN BUKU ---");
     System.out.print("Masukkan NIS Siswa: ");
@@ -523,7 +501,6 @@ public class Main {
     System.out.print("Lama Pinjam (hari): ");
     int lamaPinjam = Integer.parseInt(scanner.nextLine().trim());
 
-    // KODE TRANSAKSI BARU
     String kodeTransaksi = generateKodeTransaksi();
 
     LocalDate tglPinjam = LocalDate.now();
@@ -546,10 +523,6 @@ public class Main {
     System.out.println("Batas Kembali  : " + tglKembali.format(fmt));
 }
 
-
-// =====================================
-// METHOD BARU UNTUK AUTO KODE TRX
-// =====================================
 private static String generateKodeTransaksi() {
     int nomor = 1;
 
@@ -558,7 +531,6 @@ private static String generateKodeTransaksi() {
             nomor++;
         }
     } catch (IOException e) {
-        // abaikan jika file kosong
     }
 
     return String.format("TRX-%02d", nomor);
@@ -599,10 +571,6 @@ private static String generateKodeTransaksi() {
             System.out.println("Kode transaksi tidak ditemukan atau buku sudah dikembalikan sebelumnya.");
         }
     }
-
-    // ==========================================
-    // 5. LAPORAN & FORMAT TABEL
-    // ==========================================
 
     private static void lihatLaporan() {
     System.out.println("\n--- LAPORAN BUKU BELUM DIKEMBALIKAN & JATUH TEMPO ---");
@@ -679,11 +647,6 @@ private static String cariNamaSiswa(String nisCari) {
 
     return "Tidak Ditemukan";
 }
-
-    // ==========================================
-    // 6. UTILITY FILE I/O & FORMATTER
-    // ==========================================
-
     private static void tulisKeFile(String namaFile, String data) {
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(namaFile, true))) {
             bw.write(data);
