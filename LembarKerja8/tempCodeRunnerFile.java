@@ -1,0 +1,1 @@
+int durasi = 7
