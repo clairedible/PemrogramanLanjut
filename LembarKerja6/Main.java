@@ -74,10 +74,7 @@ public class Main {
             }
         }
     }
-<<<<<<< HEAD
 
-=======
->>>>>>> 82a0669c01bea886e05bf972310e2f703472382c
     private static void inisialisasiFile() {
         try {
             File folder = new File("D:\\pemlan\\LK06");
@@ -132,15 +129,12 @@ public class Main {
         String tglLahir = scanner.nextLine().trim();
         System.out.print("Masukkan Password: ");
         String password = scanner.nextLine().trim();
-<<<<<<< HEAD
 
         Pegawai pegawai = new Pegawai(nip, nama, password, tglLahir);
         daftarPegawai[indexPegawai] = pegawai;
         indexPegawai++;
-=======
         String dataBaru = nip + "," + nama + "," + password + "," + tglLahir;
         tulisKeFile(FILE_PEGAWAI, dataBaru);
->>>>>>> 82a0669c01bea886e05bf972310e2f703472382c
         System.out.println("BERHASIL: Akun pegawai atas nama " + nama + " berhasil dibuat! Silakan Login.");
     }
 
@@ -182,10 +176,7 @@ public class Main {
             System.out.println("Error membaca file pegawai: " + e.getMessage());
         }
     }
-<<<<<<< HEAD
 
-=======
->>>>>>> 82a0669c01bea886e05bf972310e2f703472382c
     private static void menuBuku() {
         System.out.println("\n--- KELOLA BUKU ---");
         System.out.println("1. Tambah Buku");
@@ -335,10 +326,7 @@ private static void updateBuku() {
             System.out.println("Buku dengan Kode " + targetKode + " tidak ditemukan.");
         }
     }
-<<<<<<< HEAD
 
-=======
->>>>>>> 82a0669c01bea886e05bf972310e2f703472382c
     private static void menuSiswa() {
         System.out.println("\n--- KELOLA SISWA ---");
         System.out.println("1. Tambah Siswa");
@@ -546,10 +534,7 @@ private static void updateBuku() {
     System.out.println("Batas Kembali  : " + tglKembali.format(fmt));
 }
 
-<<<<<<< HEAD
 
-=======
->>>>>>> 82a0669c01bea886e05bf972310e2f703472382c
 private static String generateKodeTransaksi() {
     int nomor = 1;
 
@@ -674,10 +659,7 @@ private static String cariNamaSiswa(String nisCari) {
 
     return "Tidak Ditemukan";
 }
-<<<<<<< HEAD
 
-=======
->>>>>>> 82a0669c01bea886e05bf972310e2f703472382c
     private static void tulisKeFile(String namaFile, String data) {
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(namaFile, true))) {
             bw.write(data);
