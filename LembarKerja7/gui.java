@@ -4,29 +4,25 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.io.File;
-import LembarKerja7.helper.*; // 👈 Diimpor dari sub-package baru
+import LembarKerja7.helper.*; 
 
 public class gui extends JFrame {
     private DefaultTableModel tableModel;
     private final SiswaService siswaService;
-    private final String FILE_NAME = "LembarKerja7/data/siswa.csv"; // 👈 Path disesuaikan ke folder kerja
+    private final String FILE_NAME = "LembarKerja7/data/siswa.csv"; 
 
-    // --- DEKLARASI WARNA TEMA ---
     private Color bgUtama = new Color(240, 248, 255);
     private Color teksJudul = new Color(25, 25, 112);
     private Color bgTombol = new Color(135, 206, 235);
     private Color bgTabelHeader = new Color(173, 216, 230);
 
     public gui() {
-        // --- INISIALISASI LAYER DATA & BUSINESS LOGIC ---
         SiswaRepository repository = new CsvSiswaRepository(FILE_NAME);
         this.siswaService = new SiswaService(repository);
 
-        // --- SETUP UIMANAGER ---
         UIManager.put("OptionPane.background", bgUtama);
         UIManager.put("Panel.background", bgUtama);
 
-        // Setup Frame Utama (Menu)
         setTitle("Menu Utama - Perpustakaan SMP");
         setSize(480, 380);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -34,7 +30,6 @@ public class gui extends JFrame {
         setLayout(new BorderLayout());
         getContentPane().setBackground(bgUtama);
 
-        // --- BAGIAN ATAS (Judul) ---
         JPanel panelAtas = new JPanel(new GridLayout(2, 1));
         panelAtas.setBackground(bgUtama);
         panelAtas.setBorder(BorderFactory.createEmptyBorder(20, 0, 20, 0));
@@ -51,7 +46,6 @@ public class gui extends JFrame {
         panelAtas.add(lblSub);
         add(panelAtas, BorderLayout.NORTH);
 
-        // --- BAGIAN TENGAH (Tombol Menu) ---
         JPanel panelMenu = new JPanel(new GridLayout(2, 2, 15, 15));
         panelMenu.setBackground(bgUtama);
         panelMenu.setBorder(BorderFactory.createEmptyBorder(10, 30, 40, 30));
@@ -72,7 +66,6 @@ public class gui extends JFrame {
 
         add(panelMenu, BorderLayout.CENTER);
 
-        // --- INISIALISASI TABEL ---
         String[] kolom = { "NIS", "Nama Siswa", "Alamat" };
         tableModel = new DefaultTableModel(kolom, 0) {
             @Override
@@ -83,7 +76,6 @@ public class gui extends JFrame {
 
         checkAndLoadData();
 
-        // --- EVENT LISTENERS ---
         btnLihat.addActionListener(e -> showDataDialog());
         btnCreate.addActionListener(e -> showCreateDialog());
         btnUpdate.addActionListener(e -> showUpdateDialog());
@@ -113,7 +105,6 @@ public class gui extends JFrame {
         }
     }
 
-    // --- LOGIKA CRUD (UI LAYER) ---
 
     private void showDataDialog() {
         refreshTableData();
