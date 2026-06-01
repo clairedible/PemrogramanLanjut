@@ -3,17 +3,13 @@ package LembarKerja7;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.io.*;
-
-class DuplicateNisException extends Exception {
-    public DuplicateNisException(String message) {
-        super(message);
-    }
-}
+import java.io.File;
+import LembarKerja7.helper.*; // 👈 Diimpor dari sub-package baru
 
 public class gui extends JFrame {
     private DefaultTableModel tableModel;
-    private final String FILE_NAME = "LembarKerja7\\siswa.csv";
+    private final SiswaService siswaService;
+    private final String FILE_NAME = "LembarKerja7/data/siswa.csv"; // 👈 Path disesuaikan ke folder kerja
 
     // --- DEKLARASI WARNA TEMA ---
     private Color bgUtama = new Color(240, 248, 255);
@@ -22,11 +18,15 @@ public class gui extends JFrame {
     private Color bgTabelHeader = new Color(173, 216, 230);
 
     public gui() {
+        // --- INISIALISASI LAYER DATA & BUSINESS LOGIC ---
+        SiswaRepository repository = new CsvSiswaRepository(FILE_NAME);
+        this.siswaService = new SiswaService(repository);
+
         // --- SETUP UIMANAGER ---
         UIManager.put("OptionPane.background", bgUtama);
         UIManager.put("Panel.background", bgUtama);
 
-        // 1. Setup Frame Utama (Menu)
+        // Setup Frame Utama (Menu)
         setTitle("Menu Utama - Perpustakaan SMP");
         setSize(480, 380);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -61,7 +61,6 @@ public class gui extends JFrame {
         JButton btnUpdate = styleButton("✏️ Update Data");
         JButton btnDelete = styleButton("🗑️ Hapus Data");
 
-        // --- WARNA KHUSUS TOMBOL ---
         btnCreate.setBackground(new Color(153, 255, 153));
         btnUpdate.setBackground(new Color(255, 255, 153));
         btnDelete.setBackground(new Color(255, 153, 153));
@@ -82,8 +81,7 @@ public class gui extends JFrame {
             }
         };
 
-        // Load data di awal (Popup muncul di sini jika file belum ada)
-        loadDataFromFile();
+        checkAndLoadData();
 
         // --- EVENT LISTENERS ---
         btnLihat.addActionListener(e -> showDataDialog());
@@ -104,9 +102,21 @@ public class gui extends JFrame {
         return button;
     }
 
-    // --- LOGIKA CRUD ---
+    private void refreshTableData() {
+        tableModel.setRowCount(0);
+        try {
+            for (Siswa s : siswaService.ambilSemuaSiswa()) {
+                tableModel.addRow(new Object[]{ s.getNis(), s.getNama(), s.getAlamat() });
+            }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Gagal memuat data tabel: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    // --- LOGIKA CRUD (UI LAYER) ---
 
     private void showDataDialog() {
+        refreshTableData();
         JTable tabelSiswa = new JTable(tableModel);
         tabelSiswa.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         tabelSiswa.setRowHeight(25);
@@ -136,19 +146,19 @@ public class gui extends JFrame {
             String nis = txtNis.getText().trim();
             String nama = txtNama.getText().trim();
             String alamat = txtAlamat.getText().trim();
+
             if (nis.isEmpty() || nama.isEmpty() || alamat.isEmpty()) {
                 JOptionPane.showMessageDialog(this, "Semua kolom harus diisi!", "Peringatan", JOptionPane.WARNING_MESSAGE);
                 return;
             }
             try {
-                if (findRowByNis(nis) != -1) {
-                    throw new DuplicateNisException("Gagal: Data dengan NIS " + nis + " sudah terdaftar!");
-                }
-                tableModel.addRow(new Object[] { nis, nama, alamat });
-                saveDataToFile();
+                siswaService.tambahSiswa(new Siswa(nis, nama, alamat));
+                refreshTableData();
                 JOptionPane.showMessageDialog(this, "Data berhasil ditambahkan!", "Sukses", JOptionPane.INFORMATION_MESSAGE);
             } catch (DuplicateNisException ex) {
                 JOptionPane.showMessageDialog(this, ex.getMessage(), "Kesalahan Input", JOptionPane.ERROR_MESSAGE);
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Terjadi kesalahan sistem: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             }
         }
     }
@@ -156,6 +166,7 @@ public class gui extends JFrame {
     private void showUpdateDialog() {
         String inputNis = JOptionPane.showInputDialog(this, "Masukkan NIS siswa yang ingin di-update:");
         if (inputNis != null && !inputNis.trim().isEmpty()) {
+            inputNis = inputNis.trim();
             int rowIndex = findRowByNis(inputNis);
             if (rowIndex != -1) {
                 JTextField txtNama = new JTextField(tableModel.getValueAt(rowIndex, 1).toString());
@@ -169,10 +180,13 @@ public class gui extends JFrame {
 
                 int option = JOptionPane.showConfirmDialog(this, formFields, "Update Data", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
                 if (option == JOptionPane.OK_OPTION) {
-                    tableModel.setValueAt(txtNama.getText().trim(), rowIndex, 1);
-                    tableModel.setValueAt(txtAlamat.getText().trim(), rowIndex, 2);
-                    saveDataToFile();
-                    JOptionPane.showMessageDialog(this, "Data berhasil diperbarui!", "Sukses", JOptionPane.INFORMATION_MESSAGE);
+                    try {
+                        siswaService.updateSiswa(inputNis, txtNama.getText().trim(), txtAlamat.getText().trim());
+                        refreshTableData();
+                        JOptionPane.showMessageDialog(this, "Data berhasil diperbarui!", "Sukses", JOptionPane.INFORMATION_MESSAGE);
+                    } catch (Exception ex) {
+                        JOptionPane.showMessageDialog(this, "Gagal memperbarui data!", "Error", JOptionPane.ERROR_MESSAGE);
+                    }
                 }
             } else {
                 JOptionPane.showMessageDialog(this, "Data dengan NIS " + inputNis + " tidak ditemukan!", "Error", JOptionPane.ERROR_MESSAGE);
@@ -183,13 +197,18 @@ public class gui extends JFrame {
     private void showDeleteDialog() {
         String inputNis = JOptionPane.showInputDialog(this, "Masukkan NIS siswa yang ingin dihapus:");
         if (inputNis != null && !inputNis.trim().isEmpty()) {
+            inputNis = inputNis.trim();
             int rowIndex = findRowByNis(inputNis);
             if (rowIndex != -1) {
                 int confirm = JOptionPane.showConfirmDialog(this, "Hapus data '" + tableModel.getValueAt(rowIndex, 1) + "'?", "Konfirmasi", JOptionPane.YES_NO_OPTION);
                 if (confirm == JOptionPane.YES_OPTION) {
-                    tableModel.removeRow(rowIndex);
-                    saveDataToFile();
-                    JOptionPane.showMessageDialog(this, "Data berhasil dihapus!", "Sukses", JOptionPane.INFORMATION_MESSAGE);
+                    try {
+                        siswaService.hapusSiswa(inputNis);
+                        refreshTableData();
+                        JOptionPane.showMessageDialog(this, "Data berhasil dihapus!", "Sukses", JOptionPane.INFORMATION_MESSAGE);
+                    } catch (Exception ex) {
+                        JOptionPane.showMessageDialog(this, "Gagal menghapus data!", "Error", JOptionPane.ERROR_MESSAGE);
+                    }
                 }
             } else {
                 JOptionPane.showMessageDialog(this, "Data tidak ditemukan!", "Error", JOptionPane.ERROR_MESSAGE);
@@ -198,19 +217,21 @@ public class gui extends JFrame {
     }
 
     private int findRowByNis(String nis) {
+        refreshTableData();
         for (int i = 0; i < tableModel.getRowCount(); i++) {
             if (tableModel.getValueAt(i, 0).toString().equals(nis)) return i;
         }
         return -1;
     }
 
-    // --- FILE I/O DENGAN POPUP ---
-
-    private void loadDataFromFile() {
+    private void checkAndLoadData() {
         File file = new File(FILE_NAME);
-        
-        // JIKA FILE TIDAK ADA: Munculkan GUI Popup Konfirmasi
+
         if (!file.exists()) {
+            if (file.getParentFile() != null) {
+                file.getParentFile().mkdirs();
+            }
+
             int pilihan = JOptionPane.showConfirmDialog(
                 this, 
                 "File data (siswa.csv) belum ditemukan.\n" +
@@ -222,32 +243,11 @@ public class gui extends JFrame {
             );
 
             if (pilihan != JOptionPane.YES_OPTION) {
-                System.exit(0); // Keluar jika user pilih 'No'
+                System.exit(0);
             }
-            return; // Masuk ke sistem jika user pilih 'Yes'
+            return;
         }
-
-        // JIKA FILE ADA: Baca datanya
-        try (BufferedReader br = new BufferedReader(new FileReader(file))) {
-            String line;
-            while ((line = br.readLine()) != null) {
-                String[] data = line.split(",");
-                if (data.length == 3) tableModel.addRow(data);
-            }
-        } catch (IOException e) {
-            JOptionPane.showMessageDialog(this, "Gagal membaca file: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
-    private void saveDataToFile() {
-        try (BufferedWriter bw = new BufferedWriter(new FileWriter(FILE_NAME))) {
-            for (int i = 0; i < tableModel.getRowCount(); i++) {
-                bw.write(tableModel.getValueAt(i, 0) + "," + tableModel.getValueAt(i, 1) + "," + tableModel.getValueAt(i, 2));
-                bw.newLine();
-            }
-        } catch (IOException e) {
-            JOptionPane.showMessageDialog(this, "Gagal menyimpan data!", "Error", JOptionPane.ERROR_MESSAGE);
-        }
+        refreshTableData();
     }
 
     public static void main(String[] args) {
