@@ -1,3 +1,5 @@
+package LembarKerja6;
+
 public class Transaksi {
     private String kodeTransaksi;
     private String nipSiswa;
